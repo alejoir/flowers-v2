@@ -2,33 +2,62 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>🌻 Telemetry Sunflower Project | Engineering Edition</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌻 Sunflower Engineering | Edición Familiar</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #000; font-family: 'Courier New', monospace; }
+        body { margin: 0; overflow: hidden; background: #000; font-family: 'Courier New', monospace; user-select: none; }
+        canvas { display: block; }
+
+        /* Panel de Telemetría (Tu firma de Ingeniero) */
         #overlay {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            color: #0f0;
-            background: rgba(0, 20, 0, 0.8);
-            padding: 15px;
-            border: 1px solid #0f0;
-            pointer-events: none;
-            font-size: 12px;
-            text-transform: uppercase;
+            position: absolute; top: 10px; left: 10px; color: #0f0; background: rgba(0, 20, 0, 0.7);
+            padding: 10px; border: 1px solid #0f0; pointer-events: none; font-size: 11px; z-index: 5;
         }
-        .label { color: #ffcc00; font-weight: bold; }
+
+        /* Contenedor de Botones (UI) */
+        #controls {
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 15px; z-index: 10;
+        }
+        .btn {
+            background: rgba(255, 204, 0, 0.1); border: 2px solid #ffcc00; color: #ffcc00;
+            padding: 12px 24px; font-size: 14px; font-weight: bold; text-transform: uppercase;
+            cursor: pointer; transition: all 0.3s ease; border-radius: 5px; backdrop-filter: blur(5px);
+        }
+        .btn:hover { background: rgba(255, 204, 0, 0.5); color: #fff; box-shadow: 0 0 15px #ffcc00; }
+        .btn:active { transform: scale(0.95); }
+
+        /* Cuadro de Mensaje Emotivo */
+        #message-box {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 80%; max-width: 500px; color: #fff; text-align: center;
+            opacity: 0; pointer-events: none; transition: opacity 1.5s ease;
+            z-index: 8;
+        }
+        #message-box p {
+            background: rgba(0,0,0,0.7); padding: 20px; border-radius: 15px;
+            font-size: 1.1rem; line-height: 1.6; border: 1px solid rgba(255,255,255,0.3);
+            font-family: 'Georgia', serif;
+        }
+        #message-box span.signature { display: block; margin-top: 15px; font-weight: bold; color: #ffcc00; }
     </style>
 </head>
 <body>
+
     <div id="overlay">
-        <div>> SYSTEM: OPERATIONAL</div>
-        <div>> LATENCY: <span id="latency">--</span> ms</div>
-        <div>> NODE: GITHUB_CDN_EDGE</div>
-        <div>> RENDER: WEBGL_CORE_V2</div>
-        <br>
-        <div class="label">PROYECTO: FLORES AMARILLAS V2.0</div>
-        <div class="label">PARA: MAMÁ & HERMANA</div>
+        <div>> SYSTEM: FAMILY_CORE_ACTIVE</div>
+        <div>> STATUS: OK</div>
+        <div>> ACTIVE_VIEW: <span id="current-view">OVERVIEW</span></div>
+        <div>> CAMERA_POS: <span id="cam-coords">x:0 y:0 z:0</span></div>
+    </div>
+
+    <div id="controls">
+        <button class="btn" id="btn-mama">🌻 Para Mamá 🌻</button>
+        <button class="btn" id="btn-hermana">🌻 Para Hermana 🌻</button>
+    </div>
+
+    <div id="message-box">
+        <p id="message-text">Mensaje Emotivo Aquí...</p>
     </div>
 
     <script type="importmap">
@@ -38,72 +67,146 @@
     <script type="module">
         import * as THREE from 'three';
 
-        // Configuración de la Escena 3D
+        // --- Configuración Core de Three.js (WebGL) ---
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
         document.body.appendChild(renderer.domElement);
 
-        // Simulación de Telemetría de Red
-        setInterval(() => {
-            const lat = Math.floor(Math.random() * (40 - 20 + 1) + 20);
-            document.getElementById('latency').innerText = lat;
-        }, 2000);
+        // --- Gestión de Estado de Cámara (Lerp smoothing) ---
+        // Vistas predefinidas (Posición y punto de enfoque)
+        const v_main = { pos: new THREE.Vector3(0, 3, 20), lookAt: new THREE.Vector3(0, 0, 0) }; // Vista general
+        const v_mama = { pos: new THREE.Vector3(-10, 2, 5), lookAt: new THREE.Vector3(-10, 0, 0) }; // Cerca ramo mamá
+        const v_hermana = { pos: new THREE.Vector3(10, 2, 5), lookAt: new THREE.Vector3(10, 0, 0) }; // Cerca ramo hermana
 
-        // Crear un Girasol Abstracto (Geometría Paramétrica)
-        function crearGirasol(x, z) {
+        let targetPos = v_main.pos.clone(); // Posición objetivo actual
+        let targetLookAt = v_main.lookAt.clone(); // Enfoque objetivo actual
+        let currentLookAt = new THREE.Vector3(); // Enfoque actual interpolado
+        
+        // Configuración inicial de cámara
+        camera.position.copy(v_main.pos);
+        currentLookAt.copy(v_main.lookAt);
+
+        // --- Iluminación ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const pointLight = new THREE.PointLight(0xffffff, 100, 50);
+        pointLight.position.set(0, 5, 10);
+        scene.add(pointLight);
+
+        // --- Creación de Activos (Girasoles 3D) ---
+        // Geometrías compartidas para rendimiento (Buenas prácticas de ingeniería)
+        const talloGeo = new THREE.CylinderGeometry(0.1, 0.1, 4, 8);
+        const talloMat = new THREE.MeshBasicMaterial({ color: 0x2d5a27 });
+        const centroGeo = new THREE.SphereGeometry(0.6, 32, 32);
+        const centroMat = new THREE.MeshBasicMaterial({ color: 0x4b2c0e });
+        const petaloGeo = new THREE.CapsuleGeometry(0.15, 0.8, 4, 8);
+        const petaloMat = new THREE.MeshBasicMaterial({ color: 0xffcc00 });
+
+        // Función constructora paramétrica de Girasoles
+        function crearGirasol() {
             const grupo = new THREE.Group();
-
-            // Tallo (Cilindro)
-            const talloGeo = new THREE.CylinderGeometry(0.1, 0.1, 4, 8);
-            const talloMat = new THREE.MeshBasicMaterial({ color: 0x2d5a27 });
             const tallo = new THREE.Mesh(talloGeo, talloMat);
             grupo.add(tallo);
-
-            // Centro (Esfera aplanada)
-            const centroGeo = new THREE.SphereGeometry(0.6, 32, 32);
-            const centroMat = new THREE.MeshBasicMaterial({ color: 0x4b2c0e });
             const centro = new THREE.Mesh(centroGeo, centroMat);
             centro.position.y = 2;
             centro.scale.set(1, 0.5, 1);
             grupo.add(centro);
-
-            // Pétalos (Instanced Mesh para rendimiento)
-            const petaloGeo = new THREE.CapsuleGeometry(0.15, 0.8, 4, 8);
-            const petaloMat = new THREE.MeshBasicMaterial({ color: 0xffcc00 });
             
-            for(let i = 0; i < 16; i++) {
+            for(let i = 0; i < 18; i++) {
                 const petalo = new THREE.Mesh(petaloGeo, petaloMat);
-                const angle = (i / 16) * Math.PI * 2;
+                const angle = (i / 18) * Math.PI * 2;
                 petalo.position.set(Math.cos(angle)*0.8, 2, Math.sin(angle)*0.8);
                 petalo.rotation.z = angle + Math.PI/2;
                 petalo.rotation.x = Math.PI/2;
                 grupo.add(petalo);
             }
-
-            grupo.position.set(x, -2, z);
             return grupo;
         }
 
-        // Generar un campo de girasoles
-        for(let i = 0; i < 20; i++) {
-            const x = (Math.random() - 0.5) * 15;
-            const z = (Math.random() - 0.5) * 15;
-            scene.add(crearGirasol(x, z));
+        // Crear dos ramos en ubicaciones separadas
+        const ramoMama = new THREE.Group();
+        const ramoHermana = new THREE.Group();
+
+        // Generar flores para ramo de mamá (Ubicación negativa en X)
+        for(let i = 0; i < 8; i++){
+            const f = crearGirasol();
+            f.position.set((Math.random()-0.5)*3 - 10, -2, (Math.random()-0.5)*3);
+            ramoMama.add(f);
+        }
+        
+        // Generar flores para ramo de hermana (Ubicación positiva en X)
+        for(let i = 0; i < 8; i++){
+            const f = crearGirasol();
+            f.position.set((Math.random()-0.5)*3 + 10, -2, (Math.random()-0.5)*3);
+            ramoHermana.add(f);
         }
 
-        camera.position.z = 10;
-        camera.position.y = 2;
+        scene.add(ramoMama, ramoHermana);
 
-        // Animación de rotación y "brisa"
+        // --- Gestión de Eventos y Mensajes ---
+        const btnMama = document.getElementById('btn-mama');
+        const btnHermana = document.getElementById('btn-hermana');
+        const messageBox = document.getElementById('message-box');
+        const messageText = document.getElementById('message-text');
+        const uiCurrentView = document.getElementById('current-view');
+
+        // Textos Emotivos (Cámbialos si quieres)
+        const txtMama = `Mami linda, gracias por darme la vida y enseñarme a ser la persona que soy hoy. Eres mi fuerza y mi guía. Estos girasoles son solo un pequeño reflejo de toda la luz que traes a mi mundo. Te quiero con todo mi corazón. ¡Feliz día!<span class="signature">- Alejo (Tu Ingeniero Favorito) -</span>`;
+        const txtHermana = `Hermanita querida, gracias por ser mi confidente, mi cómplice y mi mejor amiga. La vida es mucho más divertida y bonita contigo a mi lado. Admiro tu alegría y tu determinación. Que estos girasoles alegren tu día tanto como tú alegras el mío. ¡Te quiero mucho!<span class="signature">- Con amor, Alejo -</span>`;
+
+        function mostrarMensaje(texto) {
+            messageText.innerHTML = texto;
+            messageBox.style.opacity = 1;
+        }
+
+        function ocultarMensaje() {
+            messageBox.style.opacity = 0;
+        }
+
+        // Eventos de botones
+        btnMama.addEventListener('click', () => {
+            targetPos.copy(v_mama.pos); // Actualizar objetivo de cámara
+            targetLookAt.copy(v_mama.lookAt); // Actualizar objetivo de enfoque
+            ocultarMensaje();
+            mostrarMensaje(txtMama);
+            uiCurrentView.innerText = "MAMA_BOUQUET";
+        });
+
+        btnHermana.addEventListener('click', () => {
+            targetPos.copy(v_hermana.pos);
+            targetLookAt.copy(v_hermana.lookAt);
+            ocultarMensaje();
+            mostrarMensaje(txtHermana);
+            uiCurrentView.innerText = "HERMANA_BOUQUET";
+        });
+
+        // --- Ciclo de Renderizado / Animación / Cinematica de Cámara ---
+        const camCoords = document.getElementById('cam-coords');
+
         function animate() {
             requestAnimationFrame(animate);
-            scene.rotation.y += 0.005; // La cámara orbita el campo
+
+            // Interpolación Lineal (LERP) para suavizar movimiento (Engineering Smoothing)
+            // Movemos la posición real de la cámara suavemente hacia la objetivo (factor 0.05 por frame)
+            camera.position.lerp(targetPos, 0.05);
+            
+            // Movemos el punto de enfoque actual suavemente hacia el objetivo
+            currentLookAt.lerp(targetLookAt, 0.05);
+            
+            // Forzamos a la cámara a mirar el punto de enfoque interpolado
+            camera.lookAt(currentLookAt);
+
+            // Actualizar Telemetría en tiempo real
+            camCoords.innerText = `x:${camera.position.x.toFixed(1)} y:${camera.position.y.toFixed(1)} z:${camera.position.z.toFixed(1)}`;
+
             renderer.render(scene, camera);
         }
         animate();
 
+        // --- Gestión de Resonancia de Ventana ---
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
