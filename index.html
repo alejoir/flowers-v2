@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>🌻 Telemetry Sunflower Project | Engineering Edition</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #000; font-family: 'Courier New', monospace; }
+        #overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #0f0;
+            background: rgba(0, 20, 0, 0.8);
+            padding: 15px;
+            border: 1px solid #0f0;
+            pointer-events: none;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+        .label { color: #ffcc00; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div id="overlay">
+        <div>> SYSTEM: OPERATIONAL</div>
+        <div>> LATENCY: <span id="latency">--</span> ms</div>
+        <div>> NODE: GITHUB_CDN_EDGE</div>
+        <div>> RENDER: WEBGL_CORE_V2</div>
+        <br>
+        <div class="label">PROYECTO: FLORES AMARILLAS V2.0</div>
+        <div class="label">PARA: MAMÁ & HERMANA</div>
+    </div>
+
+    <script type="importmap">
+        { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+
+        // Configuración de la Escena 3D
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // Simulación de Telemetría de Red
+        setInterval(() => {
+            const lat = Math.floor(Math.random() * (40 - 20 + 1) + 20);
+            document.getElementById('latency').innerText = lat;
+        }, 2000);
+
+        // Crear un Girasol Abstracto (Geometría Paramétrica)
+        function crearGirasol(x, z) {
+            const grupo = new THREE.Group();
+
+            // Tallo (Cilindro)
+            const talloGeo = new THREE.CylinderGeometry(0.1, 0.1, 4, 8);
+            const talloMat = new THREE.MeshBasicMaterial({ color: 0x2d5a27 });
+            const tallo = new THREE.Mesh(talloGeo, talloMat);
+            grupo.add(tallo);
+
+            // Centro (Esfera aplanada)
+            const centroGeo = new THREE.SphereGeometry(0.6, 32, 32);
+            const centroMat = new THREE.MeshBasicMaterial({ color: 0x4b2c0e });
+            const centro = new THREE.Mesh(centroGeo, centroMat);
+            centro.position.y = 2;
+            centro.scale.set(1, 0.5, 1);
+            grupo.add(centro);
+
+            // Pétalos (Instanced Mesh para rendimiento)
+            const petaloGeo = new THREE.CapsuleGeometry(0.15, 0.8, 4, 8);
+            const petaloMat = new THREE.MeshBasicMaterial({ color: 0xffcc00 });
+            
+            for(let i = 0; i < 16; i++) {
+                const petalo = new THREE.Mesh(petaloGeo, petaloMat);
+                const angle = (i / 16) * Math.PI * 2;
+                petalo.position.set(Math.cos(angle)*0.8, 2, Math.sin(angle)*0.8);
+                petalo.rotation.z = angle + Math.PI/2;
+                petalo.rotation.x = Math.PI/2;
+                grupo.add(petalo);
+            }
+
+            grupo.position.set(x, -2, z);
+            return grupo;
+        }
+
+        // Generar un campo de girasoles
+        for(let i = 0; i < 20; i++) {
+            const x = (Math.random() - 0.5) * 15;
+            const z = (Math.random() - 0.5) * 15;
+            scene.add(crearGirasol(x, z));
+        }
+
+        camera.position.z = 10;
+        camera.position.y = 2;
+
+        // Animación de rotación y "brisa"
+        function animate() {
+            requestAnimationFrame(animate);
+            scene.rotation.y += 0.005; // La cámara orbita el campo
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
