@@ -35,7 +35,7 @@
             z-index: 8;
         }
         #message-box p {
-            background: rgba(0,0,0,0.7); padding: 20px; border-radius: 15px;
+            background: rgba(0,0,0,0.8); padding: 20px; border-radius: 15px;
             font-size: 1.1rem; line-height: 1.6; border: 1px solid rgba(255,255,255,0.3);
             font-family: 'Georgia', serif;
         }
@@ -45,7 +45,7 @@
 <body>
 
     <div id="overlay">
-        <div>> SYSTEM: FAMILY_CORE_ACTIVE</div>
+        <div>> SYSTEM: SECURE_AUTH_ACTIVE</div>
         <div>> STATUS: OK</div>
         <div>> ACTIVE_VIEW: <span id="current-view">OVERVIEW</span></div>
         <div>> CAMERA_POS: <span id="cam-coords">x:0 y:0 z:0</span></div>
@@ -76,16 +76,14 @@
         document.body.appendChild(renderer.domElement);
 
         // --- Gestión de Estado de Cámara (Lerp smoothing) ---
-        // Vistas predefinidas (Posición y punto de enfoque)
-        const v_main = { pos: new THREE.Vector3(0, 3, 20), lookAt: new THREE.Vector3(0, 0, 0) }; // Vista general
-        const v_mama = { pos: new THREE.Vector3(-10, 2, 5), lookAt: new THREE.Vector3(-10, 0, 0) }; // Cerca ramo mamá
-        const v_hermana = { pos: new THREE.Vector3(10, 2, 5), lookAt: new THREE.Vector3(10, 0, 0) }; // Cerca ramo hermana
+        const v_main = { pos: new THREE.Vector3(0, 3, 20), lookAt: new THREE.Vector3(0, 0, 0) };
+        const v_mama = { pos: new THREE.Vector3(-10, 2, 5), lookAt: new THREE.Vector3(-10, 0, 0) };
+        const v_hermana = { pos: new THREE.Vector3(10, 2, 5), lookAt: new THREE.Vector3(10, 0, 0) };
 
-        let targetPos = v_main.pos.clone(); // Posición objetivo actual
-        let targetLookAt = v_main.lookAt.clone(); // Enfoque objetivo actual
-        let currentLookAt = new THREE.Vector3(); // Enfoque actual interpolado
+        let targetPos = v_main.pos.clone();
+        let targetLookAt = v_main.lookAt.clone();
+        let currentLookAt = new THREE.Vector3();
         
-        // Configuración inicial de cámara
         camera.position.copy(v_main.pos);
         currentLookAt.copy(v_main.lookAt);
 
@@ -97,7 +95,6 @@
         scene.add(pointLight);
 
         // --- Creación de Activos (Girasoles 3D) ---
-        // Geometrías compartidas para rendimiento (Buenas prácticas de ingeniería)
         const talloGeo = new THREE.CylinderGeometry(0.1, 0.1, 4, 8);
         const talloMat = new THREE.MeshBasicMaterial({ color: 0x2d5a27 });
         const centroGeo = new THREE.SphereGeometry(0.6, 32, 32);
@@ -105,7 +102,6 @@
         const petaloGeo = new THREE.CapsuleGeometry(0.15, 0.8, 4, 8);
         const petaloMat = new THREE.MeshBasicMaterial({ color: 0xffcc00 });
 
-        // Función constructora paramétrica de Girasoles
         function crearGirasol() {
             const grupo = new THREE.Group();
             const tallo = new THREE.Mesh(talloGeo, talloMat);
@@ -126,18 +122,15 @@
             return grupo;
         }
 
-        // Crear dos ramos en ubicaciones separadas
         const ramoMama = new THREE.Group();
         const ramoHermana = new THREE.Group();
 
-        // Generar flores para ramo de mamá (Ubicación negativa en X)
         for(let i = 0; i < 8; i++){
             const f = crearGirasol();
             f.position.set((Math.random()-0.5)*3 - 10, -2, (Math.random()-0.5)*3);
             ramoMama.add(f);
         }
         
-        // Generar flores para ramo de hermana (Ubicación positiva en X)
         for(let i = 0; i < 8; i++){
             const f = crearGirasol();
             f.position.set((Math.random()-0.5)*3 + 10, -2, (Math.random()-0.5)*3);
@@ -153,7 +146,6 @@
         const messageText = document.getElementById('message-text');
         const uiCurrentView = document.getElementById('current-view');
 
-        // Textos Emotivos (Cámbialos si quieres)
         const txtMama = `Mami linda, gracias por darme la vida y enseñarme a ser la persona que soy hoy. Eres mi fuerza y mi guía. Estos girasoles son solo un pequeño reflejo de toda la luz que traes a mi mundo. Te quiero con todo mi corazón. ¡Feliz día!<span class="signature">- Alejo (Tu Ingeniero Favorito) -</span>`;
         const txtHermana = `Hermanita querida, gracias por ser mi confidente, mi cómplice y mi mejor amiga. La vida es mucho más divertida y bonita contigo a mi lado. Admiro tu alegría y tu determinación. Que estos girasoles alegren tu día tanto como tú alegras el mío. ¡Te quiero mucho!<span class="signature">- Con amor, Alejo -</span>`;
 
@@ -166,47 +158,46 @@
             messageBox.style.opacity = 0;
         }
 
-        // Eventos de botones
+        // --- Lógica de Contraseñas ---
         btnMama.addEventListener('click', () => {
-            targetPos.copy(v_mama.pos); // Actualizar objetivo de cámara
-            targetLookAt.copy(v_mama.lookAt); // Actualizar objetivo de enfoque
-            ocultarMensaje();
-            mostrarMensaje(txtMama);
-            uiCurrentView.innerText = "MAMA_BOUQUET";
+            const pass = prompt("🔐 Acceso para Mamá. Ingrese contraseña:");
+            if (pass === "1982") {
+                targetPos.copy(v_mama.pos);
+                targetLookAt.copy(v_mama.lookAt);
+                ocultarMensaje();
+                mostrarMensaje(txtMama);
+                uiCurrentView.innerText = "MAMA_BOUQUET";
+            } else {
+                alert("❌ Acceso Denegado. Contraseña incorrecta.");
+            }
         });
 
         btnHermana.addEventListener('click', () => {
-            targetPos.copy(v_hermana.pos);
-            targetLookAt.copy(v_hermana.lookAt);
-            ocultarMensaje();
-            mostrarMensaje(txtHermana);
-            uiCurrentView.innerText = "HERMANA_BOUQUET";
+            const pass = prompt("🔐 Acceso para Hermana. Ingrese contraseña:");
+            if (pass === "2004") {
+                targetPos.copy(v_hermana.pos);
+                targetLookAt.copy(v_hermana.lookAt);
+                ocultarMensaje();
+                mostrarMensaje(txtHermana);
+                uiCurrentView.innerText = "HERMANA_BOUQUET";
+            } else {
+                alert("❌ Acceso Denegado. Contraseña incorrecta.");
+            }
         });
 
-        // --- Ciclo de Renderizado / Animación / Cinematica de Cámara ---
+        // --- Animación ---
         const camCoords = document.getElementById('cam-coords');
 
         function animate() {
             requestAnimationFrame(animate);
-
-            // Interpolación Lineal (LERP) para suavizar movimiento (Engineering Smoothing)
-            // Movemos la posición real de la cámara suavemente hacia la objetivo (factor 0.05 por frame)
             camera.position.lerp(targetPos, 0.05);
-            
-            // Movemos el punto de enfoque actual suavemente hacia el objetivo
             currentLookAt.lerp(targetLookAt, 0.05);
-            
-            // Forzamos a la cámara a mirar el punto de enfoque interpolado
             camera.lookAt(currentLookAt);
-
-            // Actualizar Telemetría en tiempo real
             camCoords.innerText = `x:${camera.position.x.toFixed(1)} y:${camera.position.y.toFixed(1)} z:${camera.position.z.toFixed(1)}`;
-
             renderer.render(scene, camera);
         }
         animate();
 
-        // --- Gestión de Resonancia de Ventana ---
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
