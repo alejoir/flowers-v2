@@ -3,61 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🌻 Sunflower Engineering | Edición Familiar</title>
+    <title>🌻 Secure Flower Protocol | Telecommunications Engineering</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #000; font-family: 'Courier New', monospace; user-select: none; }
+        /* Estética de Terminal de Ingeniería */
+        body { margin: 0; overflow: hidden; background: radial-gradient(circle, #0a2e0a 0%, #000000 100%); font-family: 'Courier New', monospace; color: #0f0; }
         canvas { display: block; }
 
-        /* Panel de Telemetría (Tu firma de Ingeniero) */
-        #overlay {
-            position: absolute; top: 10px; left: 10px; color: #0f0; background: rgba(0, 20, 0, 0.7);
-            padding: 10px; border: 1px solid #0f0; pointer-events: none; font-size: 11px; z-index: 5;
+        /* Capa de Telemetría */
+        #terminal-ui {
+            position: absolute; top: 20px; left: 20px; background: rgba(0, 20, 0, 0.8);
+            padding: 15px; border: 1px solid #0f0; z-index: 100; font-size: 12px; pointer-events: none;
         }
 
-        /* Contenedor de Botones (UI) */
-        #controls {
-            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
-            display: flex; gap: 15px; z-index: 10;
-        }
-        .btn {
-            background: rgba(255, 204, 0, 0.1); border: 2px solid #ffcc00; color: #ffcc00;
-            padding: 12px 24px; font-size: 14px; font-weight: bold; text-transform: uppercase;
-            cursor: pointer; transition: all 0.3s ease; border-radius: 5px; backdrop-filter: blur(5px);
-        }
-        .btn:hover { background: rgba(255, 204, 0, 0.5); color: #fff; box-shadow: 0 0 15px #ffcc00; }
-        .btn:active { transform: scale(0.95); }
-
-        /* Cuadro de Mensaje Emotivo */
-        #message-box {
+        /* Panel de Autenticación */
+        #auth-panel {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 80%; max-width: 500px; color: #fff; text-align: center;
-            opacity: 0; pointer-events: none; transition: opacity 1.5s ease;
-            z-index: 8;
+            background: rgba(0, 40, 0, 0.9); border: 2px solid #0f0; padding: 30px;
+            text-align: center; z-index: 200; box-shadow: 0 0 20px #0f0; border-radius: 10px;
         }
-        #message-box p {
-            background: rgba(0,0,0,0.7); padding: 20px; border-radius: 15px;
-            font-size: 1.1rem; line-height: 1.6; border: 1px solid rgba(255,255,255,0.3);
-            font-family: 'Georgia', serif;
+        input {
+            background: #000; border: 1px solid #0f0; color: #0f0; padding: 10px;
+            margin: 10px 0; width: 80%; text-align: center; font-family: 'Courier New', monospace;
         }
-        #message-box span.signature { display: block; margin-top: 15px; font-weight: bold; color: #ffcc00; }
+        button {
+            background: #0f0; color: #000; border: none; padding: 10px 20px;
+            cursor: pointer; font-weight: bold; text-transform: uppercase;
+        }
+        button:hover { background: #0a0; }
+
+        /* Mensaje Emergente */
+        #display-message {
+            position: absolute; bottom: 10%; left: 50%; transform: translateX(-50%);
+            width: 85%; max-width: 600px; background: rgba(255, 255, 255, 0.95);
+            color: #052205; padding: 25px; border-radius: 15px; font-family: 'Georgia', serif;
+            display: none; z-index: 150; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            text-align: center; font-size: 1.1rem; line-height: 1.6;
+        }
+        .close-btn { color: red; cursor: pointer; float: right; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div id="overlay">
-        <div>> SYSTEM: FAMILY_CORE_ACTIVE</div>
-        <div>> STATUS: OK</div>
-        <div>> ACTIVE_VIEW: <span id="current-view">OVERVIEW</span></div>
-        <div>> CAMERA_POS: <span id="cam-coords">x:0 y:0 z:0</span></div>
+    <div id="terminal-ui">
+        <div>> NODE: ECUADOR_SECURE_GATE</div>
+        <div>> PROTOCOL: TLS_GIRASOL_V3</div>
+        <div>> ENCRYPTION: AES-256-READY</div>
+        <div>> STATUS: WAITING_AUTH...</div>
     </div>
 
-    <div id="controls">
-        <button class="btn" id="btn-mama">🌻 Para Mamá 🌻</button>
-        <button class="btn" id="btn-hermana">🌻 Para Hermana 🌻</button>
+    <div id="auth-panel" id="login">
+        <h3>🔐 ACCESO RESTRINGIDO</h3>
+        <p>Introduce tu llave de acceso:</p>
+        <input type="password" id="passInput" placeholder="CONTRASEÑA">
+        <br>
+        <button onclick="checkAccess()">DESENCRIPTAR</button>
+        <p id="error-msg" style="color: red; font-size: 10px; margin-top: 10px; display: none;">LLAVE INCORRECTA - ACCESO DENEGADO</p>
     </div>
 
-    <div id="message-box">
-        <p id="message-text">Mensaje Emotivo Aquí...</p>
+    <div id="display-message">
+        <span class="close-btn" onclick="resetView()">[X] CERRAR</span>
+        <div id="text-content"></div>
     </div>
 
     <script type="importmap">
@@ -67,146 +72,119 @@
     <script type="module">
         import * as THREE from 'three';
 
-        // --- Configuración Core de Three.js (WebGL) ---
+        // ==========================================
+        // CONFIGURACIÓN DE INGENIERÍA (MODIFICA AQUÍ)
+        // ==========================================
+        const DATA_MAMA = {
+            pass: "MAMA123", 
+            msg: "Mami querida, esta es una conexión segura solo para decirte que te amo. Eres mi motor y mi orgullo. ¡Disfruta tus girasoles!",
+            camX: -12
+        };
+
+        const DATA_SHEYLA = {
+            pass: "SHEYLA123",
+            msg: "Hermanita, acceso concedido. Gracias por ser mi mejor amiga. Estos girasoles en 3D son para ti. ¡Te quiero mucho!",
+            camX: 12
+        };
+        // ==========================================
+
+        // --- Configuración 3D ---
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(window.devicePixelRatio);
         document.body.appendChild(renderer.domElement);
 
-        // --- Gestión de Estado de Cámara (Lerp smoothing) ---
-        // Vistas predefinidas (Posición y punto de enfoque)
-        const v_main = { pos: new THREE.Vector3(0, 3, 20), lookAt: new THREE.Vector3(0, 0, 0) }; // Vista general
-        const v_mama = { pos: new THREE.Vector3(-10, 2, 5), lookAt: new THREE.Vector3(-10, 0, 0) }; // Cerca ramo mamá
-        const v_hermana = { pos: new THREE.Vector3(10, 2, 5), lookAt: new THREE.Vector3(10, 0, 0) }; // Cerca ramo hermana
+        // Fondo Verde Tecnológico
+        scene.fog = new THREE.FogExp2(0x052205, 0.05);
 
-        let targetPos = v_main.pos.clone(); // Posición objetivo actual
-        let targetLookAt = v_main.lookAt.clone(); // Enfoque objetivo actual
-        let currentLookAt = new THREE.Vector3(); // Enfoque actual interpolado
-        
-        // Configuración inicial de cámara
-        camera.position.copy(v_main.pos);
-        currentLookAt.copy(v_main.lookAt);
+        // Iluminación
+        const light = new THREE.PointLight(0xffffff, 150, 50);
+        light.position.set(0, 10, 10);
+        scene.add(light, new THREE.AmbientLight(0x404040, 2));
 
-        // --- Iluminación ---
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-        scene.add(ambientLight);
-        const pointLight = new THREE.PointLight(0xffffff, 100, 50);
-        pointLight.position.set(0, 5, 10);
-        scene.add(pointLight);
-
-        // --- Creación de Activos (Girasoles 3D) ---
-        // Geometrías compartidas para rendimiento (Buenas prácticas de ingeniería)
-        const talloGeo = new THREE.CylinderGeometry(0.1, 0.1, 4, 8);
-        const talloMat = new THREE.MeshBasicMaterial({ color: 0x2d5a27 });
-        const centroGeo = new THREE.SphereGeometry(0.6, 32, 32);
-        const centroMat = new THREE.MeshBasicMaterial({ color: 0x4b2c0e });
-        const petaloGeo = new THREE.CapsuleGeometry(0.15, 0.8, 4, 8);
-        const petaloMat = new THREE.MeshBasicMaterial({ color: 0xffcc00 });
-
-        // Función constructora paramétrica de Girasoles
-        function crearGirasol() {
-            const grupo = new THREE.Group();
-            const tallo = new THREE.Mesh(talloGeo, talloMat);
-            grupo.add(tallo);
-            const centro = new THREE.Mesh(centroGeo, centroMat);
-            centro.position.y = 2;
-            centro.scale.set(1, 0.5, 1);
-            grupo.add(centro);
-            
-            for(let i = 0; i < 18; i++) {
-                const petalo = new THREE.Mesh(petaloGeo, petaloMat);
-                const angle = (i / 18) * Math.PI * 2;
-                petalo.position.set(Math.cos(angle)*0.8, 2, Math.sin(angle)*0.8);
-                petalo.rotation.z = angle + Math.PI/2;
-                petalo.rotation.x = Math.PI/2;
-                grupo.add(petalo);
+        // Crear Girasoles
+        function createSunflower(xPos) {
+            const group = new THREE.Group();
+            // Tallo
+            const tGeo = new THREE.CylinderGeometry(0.1, 0.1, 5);
+            const tMat = new THREE.MeshStandardMaterial({ color: 0x1a4d1a });
+            const tallo = new THREE.Mesh(tGeo, tMat);
+            group.add(tallo);
+            // Centro
+            const cGeo = new THREE.CircleGeometry(0.7, 32);
+            const cMat = new THREE.MeshStandardMaterial({ color: 0x3d2606, side: THREE.DoubleSide });
+            const centro = new THREE.Mesh(cGeo, cMat);
+            centro.position.y = 2.5;
+            centro.rotation.x = Math.PI/2;
+            group.add(centro);
+            // Pétalos
+            const pGeo = new THREE.ConeGeometry(0.2, 1, 8);
+            const pMat = new THREE.MeshStandardMaterial({ color: 0xffd700 });
+            for(let i=0; i<20; i++) {
+                const p = new THREE.Mesh(pGeo, pMat);
+                const angle = (i/20) * Math.PI * 2;
+                p.position.set(Math.cos(angle)*0.9, 2.5, Math.sin(angle)*0.9);
+                p.rotation.z = angle + Math.PI/2;
+                group.add(p);
             }
-            return grupo;
+            group.position.x = xPos;
+            group.position.y = -1;
+            return group;
         }
 
-        // Crear dos ramos en ubicaciones separadas
-        const ramoMama = new THREE.Group();
-        const ramoHermana = new THREE.Group();
-
-        // Generar flores para ramo de mamá (Ubicación negativa en X)
-        for(let i = 0; i < 8; i++){
-            const f = crearGirasol();
-            f.position.set((Math.random()-0.5)*3 - 10, -2, (Math.random()-0.5)*3);
-            ramoMama.add(f);
-        }
-        
-        // Generar flores para ramo de hermana (Ubicación positiva en X)
-        for(let i = 0; i < 8; i++){
-            const f = crearGirasol();
-            f.position.set((Math.random()-0.5)*3 + 10, -2, (Math.random()-0.5)*3);
-            ramoHermana.add(f);
+        // Ramo Izquierdo (Mamá) y Derecho (Hermana)
+        for(let i=0; i<10; i++) {
+            scene.add(createSunflower(-12 + (Math.random()-0.5)*4));
+            scene.add(createSunflower(12 + (Math.random()-0.5)*4));
         }
 
-        scene.add(ramoMama, ramoHermana);
+        // --- Lógica de Cámara y Control ---
+        camera.position.set(0, 5, 25);
+        let targetX = 0;
 
-        // --- Gestión de Eventos y Mensajes ---
-        const btnMama = document.getElementById('btn-mama');
-        const btnHermana = document.getElementById('btn-hermana');
-        const messageBox = document.getElementById('message-box');
-        const messageText = document.getElementById('message-text');
-        const uiCurrentView = document.getElementById('current-view');
+        window.checkAccess = function() {
+            const input = document.getElementById('passInput').value;
+            const error = document.getElementById('error-msg');
+            const auth = document.getElementById('auth-panel');
+            const msgBox = document.getElementById('display-message');
+            const txt = document.getElementById('text-content');
 
-        // Textos Emotivos (Cámbialos si quieres)
-        const txtMama = `Mami linda, gracias por darme la vida y enseñarme a ser la persona que soy hoy. Eres mi fuerza y mi guía. Estos girasoles son solo un pequeño reflejo de toda la luz que traes a mi mundo. Te quiero con todo mi corazón. ¡Feliz día!<span class="signature">- Alejo (Tu Ingeniero Favorito) -</span>`;
-        const txtHermana = `Hermanita querida, gracias por ser mi confidente, mi cómplice y mi mejor amiga. La vida es mucho más divertida y bonita contigo a mi lado. Admiro tu alegría y tu determinación. Que estos girasoles alegren tu día tanto como tú alegras el mío. ¡Te quiero mucho!<span class="signature">- Con amor, Alejo -</span>`;
-
-        function mostrarMensaje(texto) {
-            messageText.innerHTML = texto;
-            messageBox.style.opacity = 1;
+            if(input === DATA_MAMA.pass) {
+                targetX = DATA_MAMA.camX;
+                txt.innerText = DATA_MAMA.msg;
+                finalizeAccess(auth, msgBox);
+            } else if(input === DATA_SHEYLA.pass) {
+                targetX = DATA_SHEYLA.camX;
+                txt.innerText = DATA_SHEYLA.msg;
+                finalizeAccess(auth, msgBox);
+            } else {
+                error.style.display = 'block';
+                setTimeout(() => error.style.display = 'none', 2000);
+            }
         }
 
-        function ocultarMensaje() {
-            messageBox.style.opacity = 0;
+        function finalizeAccess(auth, msgBox) {
+            auth.style.display = 'none';
+            setTimeout(() => { msgBox.style.display = 'block'; }, 2000);
         }
 
-        // Eventos de botones
-        btnMama.addEventListener('click', () => {
-            targetPos.copy(v_mama.pos); // Actualizar objetivo de cámara
-            targetLookAt.copy(v_mama.lookAt); // Actualizar objetivo de enfoque
-            ocultarMensaje();
-            mostrarMensaje(txtMama);
-            uiCurrentView.innerText = "MAMA_BOUQUET";
-        });
-
-        btnHermana.addEventListener('click', () => {
-            targetPos.copy(v_hermana.pos);
-            targetLookAt.copy(v_hermana.lookAt);
-            ocultarMensaje();
-            mostrarMensaje(txtHermana);
-            uiCurrentView.innerText = "HERMANA_BOUQUET";
-        });
-
-        // --- Ciclo de Renderizado / Animación / Cinematica de Cámara ---
-        const camCoords = document.getElementById('cam-coords');
+        window.resetView = function() {
+            targetX = 0;
+            document.getElementById('display-message').style.display = 'none';
+            document.getElementById('auth-panel').style.display = 'block';
+            document.getElementById('passInput').value = "";
+        }
 
         function animate() {
             requestAnimationFrame(animate);
-
-            // Interpolación Lineal (LERP) para suavizar movimiento (Engineering Smoothing)
-            // Movemos la posición real de la cámara suavemente hacia la objetivo (factor 0.05 por frame)
-            camera.position.lerp(targetPos, 0.05);
-            
-            // Movemos el punto de enfoque actual suavemente hacia el objetivo
-            currentLookAt.lerp(targetLookAt, 0.05);
-            
-            // Forzamos a la cámara a mirar el punto de enfoque interpolado
-            camera.lookAt(currentLookAt);
-
-            // Actualizar Telemetría en tiempo real
-            camCoords.innerText = `x:${camera.position.x.toFixed(1)} y:${camera.position.y.toFixed(1)} z:${camera.position.z.toFixed(1)}`;
-
+            // Suavizado de cámara (Lerp)
+            camera.position.x += (targetX - camera.position.x) * 0.03;
+            camera.lookAt(targetX, 0, 0);
             renderer.render(scene, camera);
         }
         animate();
 
-        // --- Gestión de Resonancia de Ventana ---
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
